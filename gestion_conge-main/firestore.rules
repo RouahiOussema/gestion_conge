@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.token.role == 'rh';
+      allow update: if request.auth.token.role == 'rh' || request.auth.uid == userId;
+    }
+    match /leaveRequests/{requestId} {
+      allow read: if request.auth.token.role == 'rh' || 
+                    request.auth.token.role == 'responsable' || 
+                    request.auth.uid == resource.data.employeId;
+      allow create: if request.auth.uid == request.resource.data.employeId;
+      allow update: if (request.auth.token.role == 'responsable' && 
+                         request.resource.data.statut in ['ACCEPTE_RESP', 'REFUSE_RESP']) ||
+                        (request.auth.token.role == 'rh' && 
+                         request.resource.data.statut in ['VALIDE_RH', 'REFUSE_RH']);
+    }
+  }
+}
